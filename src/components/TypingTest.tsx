@@ -56,11 +56,6 @@ const TypingTest: React.FC<TypingTestProps> = ({
   const activeWordRef = useRef<HTMLSpanElement>(null);
   const endAttemptRef = useRef<() => void>(() => { });
 
-  // Helper: update a char counter in both ref and state
-  const addCorrect = (n: number) => { correctCharsRef.current += n; setCorrectChars(correctCharsRef.current); };
-  const addIncorrect = (n: number) => { incorrectCharsRef.current += n; setIncorrectChars(incorrectCharsRef.current); };
-  const addTotal = (n: number) => { totalTypedRef.current += n; setTotalTypedChars(totalTypedRef.current); };
-
   // Init statuses whenever words change
   useEffect(() => {
     setWordStatuses(words.map(() => "pending"));
