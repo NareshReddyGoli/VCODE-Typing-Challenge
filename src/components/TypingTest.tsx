@@ -23,7 +23,7 @@ const TypingTest: React.FC<TypingTestProps> = ({
   onContestEnd,
 }) => {
   const [words, setWords] = useState<string[]>(() =>
-    generateTypingText(60).split(" ")
+    generateTypingText(140).split(" ")
   );
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [currentInput, setCurrentInput] = useState("");
@@ -249,7 +249,7 @@ const TypingTest: React.FC<TypingTestProps> = ({
 
   // ── Reset ───────────────────────────────────────────────────────────────────
   const resetAttempt = () => {
-    const newWords = generateTypingText(60).split(" ");
+    const newWords = generateTypingText(140).split(" ");
     // Reset refs
     correctCharsRef.current = 0;
     incorrectCharsRef.current = 0;
@@ -379,34 +379,46 @@ const TypingTest: React.FC<TypingTestProps> = ({
         <div ref={wordsRef} className="words-container" id="wordsWrapper">
           <div className="typing-caret smooth" style={{ left: `${caretPos.left}px`, top: `${caretPos.top}px` }} />
           <div id="words">
-            {words.map((word, wi) => {
-              const isCurrent = wi === currentWordIndex;
-              const isPast = wi < currentWordIndex;
-              const wStatus = wordStatuses[wi];
-              const chars = charStatuses[wi] || word.split("").map(() => "pending");
-              let wordClass = "word";
-              if (isCurrent) wordClass += " active";
-              if (isPast && wStatus === "incorrect") wordClass += " error";
-              return (
-                <span key={wi} ref={isCurrent ? activeWordRef : null} className={wordClass}>
-                  {word.split("").map((char, ci) => {
-                    const cs = chars[ci] || "pending";
-                    let lc = "typletter";
-                    if (isPast) lc += wStatus === "correct" ? " correct" : " incorrect";
-                    else if (isCurrent) {
-                      if (cs === "correct") lc += " correct";
-                      else if (cs === "incorrect") lc += " incorrect";
-                    }
-                    return <span key={ci} className={lc}>{char}</span>;
+            {(() => {
+              const wordsPerLine = 7;
+              const lines = [];
+              for (let i = 0; i < words.length; i += wordsPerLine) {
+                lines.push(words.slice(i, i + wordsPerLine));
+              }
+              return lines.map((lineWords, lineIndex) => (
+                <div key={lineIndex} className="word-line">
+                  {lineWords.map((word, wi) => {
+                    const actualWordIndex = lineIndex * wordsPerLine + wi;
+                    const isCurrent = actualWordIndex === currentWordIndex;
+                    const isPast = actualWordIndex < currentWordIndex;
+                    const wStatus = wordStatuses[actualWordIndex];
+                    const chars = charStatuses[actualWordIndex] || word.split("").map(() => "pending");
+                    let wordClass = "word";
+                    if (isCurrent) wordClass += " active";
+                    if (isPast && wStatus === "incorrect") wordClass += " error";
+                    return (
+                      <span key={actualWordIndex} ref={isCurrent ? activeWordRef : null} className={wordClass}>
+                        {word.split("").map((char, ci) => {
+                          const cs = chars[ci] || "pending";
+                          let lc = "typletter";
+                          if (isPast) lc += wStatus === "correct" ? " correct" : " incorrect";
+                          else if (isCurrent) {
+                            if (cs === "correct") lc += " correct";
+                            else if (cs === "incorrect") lc += " incorrect";
+                          }
+                          return <span key={ci} className={lc}>{char}</span>;
+                        })}
+                        {isCurrent && currentInput.length > word.length &&
+                          currentInput.slice(word.length).split("").map((ch, i) => (
+                            <span key={`x${i}`} className="typletter typletter-extra">{ch}</span>
+                          ))
+                        }
+                      </span>
+                    );
                   })}
-                  {isCurrent && currentInput.length > word.length &&
-                    currentInput.slice(word.length).split("").map((ch, i) => (
-                      <span key={`x${i}`} className="typletter typletter-extra">{ch}</span>
-                    ))
-                  }
-                </span>
-              );
-            })}
+                </div>
+              ));
+            })()}
           </div>
         </div>
       </div>
@@ -429,7 +441,23 @@ const TypingTest: React.FC<TypingTestProps> = ({
 
       {!isActive && (
         <div className="hint-row" style={{ marginTop: "2rem" }}>
-          <kbd>tab</kbd>&nbsp;to restart&nbsp;&nbsp;·&nbsp;&nbsp;start typing to begin
+          <div className="flex flex-col gap-2">
+            <div>
+              <kbd>tab</kbd>&nbsp;to restart&nbsp;&nbsp;·&nbsp;&nbsp;start typing to begin
+            </div>
+            <div className="text-xs text-white/30 mt-2 p-3 bg-white/5 rounded border border-white/10">
+              <p className="font-semibold text-white/50 mb-2">Performance Metrics:</p>
+              <p className="text-white/40">
+                <span className="text-[var(--vcode-primary)]">WPM:</span> (Correct Chars ÷ 5) ÷ Minutes
+              </p>
+              <p className="text-white/40">
+                <span className="text-[var(--vcode-secondary)]">Accuracy:</span> (Correct ÷ Total) × 100%
+              </p>
+              <p className="text-white/30 mt-1">
+                💡 Focus on accuracy first, speed improves with practice!
+              </p>
+            </div>
+          </div>
         </div>
       )}
     </div>
